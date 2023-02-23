@@ -18,7 +18,7 @@ fn fetch_clspv_dependencies() {
     // python3 utils/fetch_sources.py
     Command::new("python3")
         .current_dir("clspv-ffi/clspv")
-        .args(["utils/fetch_sources.py"])
+        .args(["utils/fetch_sources.py", "--shallow"])
         .status()
         .expect("failed to fetch clspv dependencies");
 }
@@ -27,6 +27,7 @@ fn build_clspv() {
     let dst = Config::new("clspv-ffi")
         // CMake options
         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
+        .define("CMAKE_INSTALL_LIBDIR", "lib")
         // Always build in the release mode - LLVM requires inordinate amounts of memory
         // if it is built in the debug mode.
         .profile("Release")
@@ -35,7 +36,7 @@ fn build_clspv() {
         .always_configure(false)
         .build();
 
-    println!("cargo:rustc-link-search=native={}/lib64", dst.display());
+    println!("cargo:rustc-link-search=native={}/lib", dst.display());
     println!("cargo:rustc-link-lib=static=clspv_combined");
     println!("cargo:rustc-link-lib=static=clspv_ffi");
 
