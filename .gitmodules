@@ -1,0 +1,3 @@
+[submodule "clspv-ffi/clspv"]
+	path = clspv-ffi/clspv
+	url = https://github.com/google/clspv.git
