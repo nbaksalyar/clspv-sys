@@ -28,6 +28,10 @@ fn build_clspv() {
         // CMake options
         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
         .define("CMAKE_INSTALL_LIBDIR", "lib")
+        // LLVM build options - disable unnecessary dependencies.
+        .define("LLVM_ENABLE_TERMINFO", "OFF")
+        .define("LLVM_ENABLE_ZSTD", "OFF")
+        .define("LLVM_ENABLE_ZLIB", "OFF")
         // Always build in the release mode - LLVM requires inordinate amounts of memory
         // if it is built in the debug mode.
         .profile("Release")
@@ -39,12 +43,6 @@ fn build_clspv() {
     println!("cargo:rustc-link-search=native={}/lib", dst.display());
     println!("cargo:rustc-link-lib=static=clspv_combined");
     println!("cargo:rustc-link-lib=static=clspv_ffi");
-
-    // LLVM requires these - see if it's possible to get rid of these deps.
-    // fixme: would it work on windows?
-    println!("cargo:rustc-link-lib=curses");
-    println!("cargo:rustc-link-lib=z");
-    println!("cargo:rustc-link-lib=zstd");
 }
 
 // taken from `shaderc-rs`, licensed under the Apache 2.0 license.
