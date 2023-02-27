@@ -13,6 +13,17 @@ fn main() {
     emit_std_cpp_link();
 }
 
+fn build_clspv() {
+    let target_env = env::var("CARGO_CFG_TARGET_ENV").unwrap();
+
+    if target_env == "msvc" {
+        // TODO: support GCC builds on Windows.
+        build_clspv_msvc();
+    } else {
+        build_clspv_unix();
+    }
+}
+
 // Runs the python script to fetch dependencies required for building clspv.
 fn fetch_clspv_dependencies() {
     // python3 utils/fetch_sources.py
@@ -23,7 +34,34 @@ fn fetch_clspv_dependencies() {
         .expect("failed to fetch clspv dependencies");
 }
 
-fn build_clspv() {
+fn build_clspv_msvc() {
+    let dst = Config::new("clspv-ffi")
+        // CMake options
+        .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
+        .define("CMAKE_INSTALL_LIBDIR", "lib")
+        // LLVM build options - disable unnecessary dependencies.
+        .define("LLVM_ENABLE_TERMINFO", "OFF")
+        .define("LLVM_ENABLE_ZSTD", "OFF")
+        .define("LLVM_ENABLE_ZLIB", "OFF")
+        // Always build in the release mode - LLVM requires inordinate amounts of memory
+        // if it is built in the debug mode.
+        .profile("Release")
+        // It takes more than a minute for CMake to configure clspv, so let's prevent
+        // it from excessive reconfigurations.
+        .always_configure(false)
+        // Windows-specific configuration - set max. path and disable warnings for VS2019.
+        .define("CMAKE_OBJECT_PATH_MAX", "512")
+        .define("CMAKE_C_FLAGS", "/Wv:18")
+        .define("CMAKE_CXX_FLAGS", "/Wv:18")
+        .generator("Ninja")
+        .build();
+
+    println!("cargo:rustc-link-search=native={}/lib", dst.display());
+    println!("cargo:rustc-link-lib=static=clspv_combined");
+    println!("cargo:rustc-link-lib=static=clspv_ffi");
+}
+
+fn build_clspv_unix() {
     let dst = Config::new("clspv-ffi")
         // CMake options
         .define("CMAKE_POSITION_INDEPENDENT_CODE", "ON")
