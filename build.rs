@@ -8,12 +8,36 @@ fn main() {
         return;
     }
 
-    fetch_clspv_dependencies();
-    build_clspv();
-    emit_std_cpp_link();
+    let build_from_source = env::var("CARGO_FEATURE_BUILD_FROM_SOURCE").is_ok();
+
+    // Check if pre-built clspv libs are used.
+    let mut search_dir = if let Ok(lib_dir) = env::var("CLSPV_LIB_DIR") {
+        println!("cargo:warning=clspv-sys: searching native clspv libraries in '{lib_dir}'");
+        Some(lib_dir)
+    } else {
+        None
+    };
+
+    // Try to build with the static library if a path was explicit set.
+    if let Some(search_dir) = search_dir {
+        println!("cargo:rustc-link-search=native={search_dir}");
+        println!("cargo:rustc-link-lib=static=clspv_combined");
+        println!("cargo:rustc-link-lib=static=clspv_ffi");
+        emit_std_cpp_link();
+        return;
+    }
+
+    if build_from_source {
+        fetch_clspv_dependencies();
+        build_clspv();
+        emit_std_cpp_link();
+    } else {
+        println!("cargo:warning=clspv-sys: clspv libraries not found - either use the build-from-source feature or provide a path to pre-built binary.");
+    }
 }
 
 fn build_clspv() {
+    println!("cargo:warning=clspv-sys: building clspv from source. it may take a while");
     let target_env = env::var("CARGO_CFG_TARGET_ENV").unwrap();
 
     if target_env == "msvc" {
@@ -76,6 +100,7 @@ fn build_clspv_unix() {
         // It takes more than a minute for CMake to configure clspv, so let's prevent
         // it from excessive reconfigurations.
         .always_configure(false)
+        .generator("Ninja")
         .build();
 
     println!("cargo:rustc-link-search=native={}/lib", dst.display());

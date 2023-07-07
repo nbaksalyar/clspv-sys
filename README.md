@@ -18,14 +18,14 @@ cargo build
 
 ## Building on Linux
 
-Install CMake using your package manager:
+Install CMake and Ninja using your package manager:
 
 ```bash
-apt install cmake
+apt install -y cmake ninja-build
 
 # or:
 
-dnf in cmake
+dnf in cmake ninja-build
 ```
 
 ## Building on macOS
@@ -33,7 +33,7 @@ dnf in cmake
 Install CMake:
 
 ```
-brew install cmake
+brew install cmake ninja
 ```
 
 ## Building on Windows
